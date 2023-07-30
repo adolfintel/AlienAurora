@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FD23</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script type="text/javascript" src="fd23.js"></script>
+<style type="text/css">
+    *{
+        box-sizing:border-box;
+        user-select:none;
+    }
+    #canvas{
+        position:fixed;
+        top:0;
+        left:0;
+        width:100vw;
+        height:100vh;
+        z-index:-1;
+    }
+    #settings{
+        position:fixed;
+        top:0;
+        left:0;
+        width:20rem;
+        height:100vh;
+        padding:0 1.25rem 1rem 0.5rem;
+        z-index:1;
+        background:#00000030;
+        backdrop-filter:blur(2rem);
+        box-shadow:0 0 1rem #000000A0;
+        color:white;
+        text-shadow:0.1em 0.1em 0 #00000060;
+        font-family:sans-serif;
+        overflow-y:auto;
+        transition:left 0.5s;
+    }
+    ::-webkit-scrollbar {
+        display:none;
+    }
+    #settings *{
+        position:relative;
+        left:0;
+        transition:left 0.5s;
+    }
+    #settings.closed{
+        left:-17rem;
+        overflow:hidden;
+    }
+    #settings.closed>*{
+        position:relative;
+        left:-5rem;
+    }
+    #openclose{
+        position:absolute !important;
+        left:17.5rem !important;
+        top:0.5rem;
+        width:2rem;
+        height:2rem;
+        font-size:2rem;
+        font-family:monospace;
+        color:white;
+    }
+    #openclose::before{
+        content:"⬅️";
+    }
+    #settings.closed #openclose::before{
+        content:"➡️";
+    }
+    #title{
+        font-size:1.65rem;
+        transform:translate(0,0) rotate(0);
+        transition:all 0.3s;
+    }
+    #settings.closed #title{
+        transform:translate(13.75rem,7rem) rotate(-90deg);
+        
+    }
+    #fps{
+        position:fixed;
+        top:0;
+        right:0;
+        padding:0.5rem;
+        font-family:monospace;
+        font-size:1.5rem;
+        color:#FFFF00;
+        text-shadow:0.05em 0.05em 0 black;
+        z-index:0;
+    }
+    div.setting{
+        display:block;
+        border-bottom:1px solid #FFFFFF80;
+        margin-bottom:0.5rem;
+    }
+    div.setting>label:first-of-type{
+        display:block;
+    }
+    div.setting>input{
+        width:75%;
+    }
+    div.setting>label:last-of-type{
+        display:inline-block;
+        float:right;
+    }
+    .small{
+        font-size:0.75em;
+    }
+    #json{
+        display:block;
+        width:100%;
+        height:5rem;
+        color:black;
+        background:#FFFFFF60;
+        border:1px solid #FFFFFF80;
+        resize:none;
+    }
+    #json:focus{
+        background:#FFFFFF;
+    }
+    #settings a{
+        color:white;
+    }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="fps"></div>
+<div id="settings">
+    <h1 id="title">Configuration</h1>
+    <div id="openclose" onclick="settings.classList.toggle('closed')"></div>
+    <h4>Color settings</h4>
+    <div class="setting">
+        <label for="targetHue">Hue</label>
+        <input type="range" id="targetHue" min="0" max="360"/>
+        <label for="targetHue" id="targetHueValue"></label>
+    </div>
+    <div class="setting">
+        <label for="targetSaturation">Saturation</label>
+        <input type="range" id="targetSaturation" min="0" max="100"/>
+        <label for="targetSaturation" id="targetSaturationValue"></label>
+    </div>
+    <div class="setting">
+        <label for="targetLightness">Lightness</label>
+        <input type="range" id="targetLightness" min="0" max="100"/>
+        <label for="targetLightness" id="targetLightnessValue"></label>
+    </div>
+    <div class="setting">
+        <label for="targetAlpha">Effect intensity</label>
+        <input type="range" id="targetAlpha" min="0" max="100"/>
+        <label for="targetAlpha" id="targetAlphaValue"></label>
+    </div>
+    <h4>Color variation settings</h4>
+    <div class="setting">
+        <label for="targetHueVariance">Hue variance</label>
+        <input type="range" id="targetHueVariance" min="0" max="360"/>
+        <label for="targetHueVariance" id="targetHueVarianceValue"></label>
+    </div>
+    <div class="setting">
+        <label for="targetSaturationVariance">Saturation variance</label>
+        <input type="range" id="targetSaturationVariance" min="0" max="100"/>
+        <label for="targetSaturationVariance" id="targetSaturationVarianceValue"></label>
+    </div>
+    <div class="setting">
+        <label for="targetLightnessVariance">Lightness variance</label>
+        <input type="range" id="targetLightnessVariance" min="0" max="100"/>
+        <label for="targetLightnessVariance" id="targetLightnessVarianceValue"></label>
+    </div>
+    <div class="setting">
+        <label for="hueCyclePeriod">Hue cycle period</label>
+        <input type="range" id="hueCyclePeriod" min="0" max="10000"/>
+        <label for="hueCyclePeriod" id="hueCyclePeriodValue"></label>
+    </div>
+    <h4>Shapes settings</h4>
+    <div class="setting">
+        <label for="nParticles">Number of particles</label>
+        <input type="range" id="nParticles" min="1" max="30"/>
+        <label for="nParticles" id="nParticlesValue"></label>
+    </div>
+    <div class="setting">
+        <label for="ringsPerParticle">Rings per particle</label>
+        <input type="range" id="ringsPerParticle" min="1" max="20"/>
+        <label for="ringsPerParticle" id="ringsPerParticleValue"></label>
+    </div>
+    <div class="setting">
+        <label for="targetGradientBias">Ring shape</label>
+        <input type="range" id="targetGradientBias" min="0" max="10" step="0.01"/>
+        <label for="targetGradientBias" id="targetGradientBiasValue"></label>
+    </div>
+    <h4>Animation settings</h4>
+    <div class="setting">
+        <label for="targetSpeed">Animation speed</label>
+        <input type="range" id="targetSpeed" min="0" max="50" step="0.1"/>
+        <label for="targetSpeed" id="targetSpeedValue"></label>
+    </div>
+    <div class="setting">
+        <label for="targetAnimationIntensity">Animation variability</label>
+        <input type="range" id="targetAnimationIntensity" min="0" max="5" step="0.01"/>
+        <label for="targetAnimationIntensity" id="targetAnimationIntensityValue"></label>
+    </div>
+    <div class="setting">
+        <label for="targetRingDistortionIntensity">Ring distortion intensity</label>
+        <input type="range" id="targetRingDistortionIntensity" min="0" max="5" step="0.01"/>
+        <label for="targetRingDistortionIntensity" id="targetRingDistortionIntensityValue"></label>
+    </div>
+    <div class="setting">
+        <label for="colorAdjustmentSpeed">Color adjustment speed</label>
+        <input type="range" id="colorAdjustmentSpeed" min="0.01" max="5" step="0.01"/>
+        <label for="colorAdjustmentSpeed" id="colorAdjustmentSpeedValue"></label>
+    </div>
+    <div class="setting">
+        <label for="speedAdjustmentSpeed">Animation adjustment speed</label>
+        <input type="range" id="speedAdjustmentSpeed" min="0.01" max="5" step="0.01"/>
+        <label for="speedAdjustmentSpeed" id="speedAdjustmentSpeedValue"></label>
+    </div>
+    <h4>Interaction settings<br/><span class="small">Scroll on the canvas to see the effect</span></h4>
+    <div class="setting">
+        <label for="tOffsetIntensity">Movement intensity</label>
+        <input type="range" id="tOffsetIntensity" min="0" max="10" step="0.1"/>
+        <label for="tOffsetIntensity" id="tOffsetIntensityValue"></label>
+    </div>
+    <div class="setting">
+        <label for="tOffsetAdjustmentSpeed">Movement speed</label>
+        <input type="range" id="tOffsetAdjustmentSpeed" min="0.01" max="5" step="0.01"/>
+        <label for="tOffsetAdjustmentSpeed" id="tOffsetAdjustmentSpeedValue"></label>
+    </div>
+    <h4>Advanced settings</h4>
+    <div class="setting">
+        <label for="resolutionScale">Resolution scale</label>
+        <input type="range" id="resolutionScale" min="0.1" max="4" step="0.01"/>
+        <label for="resolutionScale" id="resolutionScaleValue"></label>
+    </div>
+    <div class="setting">
+        <label for="compensatePerceivedBrightness">Perceived brightness compensation</label>
+        <input type="checkbox" id="compensatePerceivedBrightness"/>
+        <label for="compensatePerceivedBrightness" id="compensatePerceivedBrightnessValue"></label>
+    </div>
+    <h4>JSON<br/><a href="#" class="small" onclick="confToClipboard()">Click to copy</a></h4>
+    <textarea id="json" readonly="true"></textarea>
+</div>
+<script type="text/javascript">
+    var x=new FD23(canvas);
+    function tOffsetExample(e){
+        if(typeof e.deltaY !== "undefined") x.targetTOffset+=e.deltaY*(window.devicePixelRatio||1); else x.targetTOffset+=e.detail*64*(window.devicePixelRatio||1);
+    }
+    canvas.addEventListener("DOMMouseScroll",tOffsetExample);
+    canvas.addEventListener("mousewheel",tOffsetExample);
+    var t=0, prevT=1, smoothFps=0, prevhcp=0;
+    function update(){
+        x.targetHue=targetHueValue.innerText=targetHue.value;
+        x.targetSaturation=targetSaturationValue.innerText=targetSaturation.value;
+        x.targetLightness=targetLightnessValue.innerText=targetLightness.value;
+        x.targetAlpha=targetAlphaValue.innerText=targetAlpha.value;
+        x.targetHueVariance=targetHueVarianceValue.innerText=targetHueVariance.value;
+        x.targetSaturationVariance=targetSaturationVarianceValue.innerText=targetSaturationVariance.value;
+        x.targetLightnessVariance=targetLightnessVarianceValue.innerText=targetLightnessVariance.value;
+        var hcp=hueCyclePeriod.value/hueCyclePeriod.max;
+        if(hcp!=prevhcp) x._lightness=0; //prevent flickering while adjusting hue cycle period
+        prevhcp=hcp;
+        if(hcp==0){
+            hueCyclePeriodValue.innerText="Fixed";
+        }else{
+            hcp=1+Math.pow(hcp,5)*365*24*60*60;
+            if(hcp<61){
+                hueCyclePeriodValue.innerText=~~(hcp*10)/10+"s";
+            }else if(hcp<300){
+                hueCyclePeriodValue.innerText=~~hcp+"s";
+            }else if(hcp<10800){
+                hueCyclePeriodValue.innerText=~~(hcp/60)+"m";
+            }else if(hcp<345600){
+                hueCyclePeriodValue.innerText=~~(hcp/(60*60))+"h";
+            }else{
+                hueCyclePeriodValue.innerText=~~(hcp/(24*60*60))+"d";
+            }
+        }
+        x.hueCyclePeriod=hcp;
+        x.nParticles=nParticlesValue.innerText=nParticles.value;
+        x.ringsPerParticle=ringsPerParticleValue.innerText=ringsPerParticle.value;
+        x.targetGradientBias=targetGradientBiasValue.innerText=targetGradientBias.value;
+        x.targetRingDistortionIntensity=targetRingDistortionIntensityValue.innerText=targetRingDistortionIntensity.value;
+        x.targetSpeed=targetSpeedValue.innerText=targetSpeed.value;
+        x.targetAnimationIntensity=targetAnimationIntensityValue.innerText=targetAnimationIntensity.value;
+        x.colorAdjustmentSpeed=colorAdjustmentSpeedValue.innerText=colorAdjustmentSpeed.value;
+        x.speedAdjustmentSpeed=speedAdjustmentSpeedValue.innerText=speedAdjustmentSpeed.value;
+        if(tOffsetIntensity.value!=tOffsetIntensityValue.innerText) x._lightness=0; //prevent flickering while adjusting interaction movement intensity
+        x.tOffsetIntensity=tOffsetIntensityValue.innerText=tOffsetIntensity.value;
+        x.tOffsetAdjustmentSpeed=tOffsetAdjustmentSpeedValue.innerText=tOffsetAdjustmentSpeed.value;
+        x.resolutionScale=resolutionScaleValue.innerText=resolutionScale.value;
+        x.compensatePerceivedBrightness=compensatePerceivedBrightnessValue.innerText=compensatePerceivedBrightness.checked;
+        t=timeStamp();
+        smoothFps=0.8*smoothFps+0.2*(1000/(t-prevT));
+        fps.innerText=Math.round(smoothFps)+" FPS";
+        prevT=t;
+        requestAnimationFrame(update);
+    }
+    function init(){
+        targetHueValue.innerText=targetHue.value=x.targetHue;
+        targetSaturationValue.innerText=targetSaturation.value=x.targetSaturation;
+        targetLightnessValue.innerText=targetLightness.value=x.targetLightness;
+        targetAlphaValue.innerText=targetAlpha.value=x.targetAlpha;
+        targetHueVarianceValue.innerText=targetHueVariance.value=x.targetHueVariance;
+        targetSaturationVarianceValue.innerText=targetSaturationVariance.value=x.targetSaturationVariance;
+        targetLightnessVarianceValue.innerText=targetLightnessVariance.value=x.targetLightnessVariance;
+        var hcp=x.hueCyclePeriod;
+        if(hcp!=0){
+            hcp=Math.log((hcp-1)/(365*24*60*60),5);
+        }
+        hueCyclePeriod.value=hcp*hueCyclePeriod.max;
+        nParticlesValue.innerText=nParticles.value=x.nParticles;
+        ringsPerParticleValue.innerText=ringsPerParticle.value=x.ringsPerParticle;
+        targetGradientBiasValue.innerText=targetGradientBias.value=x.targetGradientBias;
+        targetRingDistortionIntensityValue.innerText=targetRingDistortionIntensity.value=x.targetRingDistortionIntensity;
+        targetSpeedValue.innerText=targetSpeed.value=x.targetSpeed;
+        targetAnimationIntensityValue.innerText=targetAnimationIntensity.value=x.targetAnimationIntensity;
+        colorAdjustmentSpeedValue.innerText=colorAdjustmentSpeed.value=x.colorAdjustmentSpeed;
+        speedAdjustmentSpeedValue.innerText=speedAdjustmentSpeed.value=x.speedAdjustmentSpeed;
+        tOffsetIntensityValue.innerText=tOffsetIntensity.value=x.tOffsetIntensity;
+        tOffsetAdjustmentSpeedValue.innerText=tOffsetAdjustmentSpeed.value=x.tOffsetAdjustmentSpeed;
+        resolutionScaleValue.innerText=resolutionScale.value=x.resolutionScale;
+        compensatePerceivedBrightnessValue.innerText=compensatePerceivedBrightness.checked=x.compensatePerceivedBrightness;
+        update();
+    }
+    init();
+    setInterval(function(){
+        if(document.activeElement!=json) json.innerText=JSON.stringify({
+            targetHue:x.targetHue,
+            targetSaturation:x.targetSaturation,
+            targetLightness:x.targetLightness,
+            targetAlpha:x.targetAlpha,
+            targetHueVariance:x.targetHueVariance,
+            targetSaturationVariance:x.targetSaturationVariance,
+            targetLightnessVariance:x.targetLightnessVariance,
+            hueCyclePeriod:x.hueCyclePeriod,
+            nParticles:x.nParticles,
+            ringsPerParticle:x.ringsPerParticle,
+            targetGradientBias:x.targetGradientBias,
+            targetRingDistortionIntensity:x.targetRingDistortionIntensity,
+            targetSpeed:x.targetSpeed,
+            targetAnimationIntensity:x.targetAnimationIntensity,
+            colorAdjustmentSpeed:x.colorAdjustmentSpeed,
+            speedAdjustmentSpeed:x.speedAdjustmentSpeed,
+            tOffsetIntensity:x.tOffsetIntensity,
+            tOffsetAdjustmentSpeed:x.tOffsetAdjustmentSpeed,
+            resolutionScale:x.resolutionScale,
+            compensatePerceivedBrightness:x.compensatePerceivedBrightness
+        });
+    },500);
+    function confToClipboard(){
+        navigator.clipboard.writeText(json.value);
+        alert("Copied to clipboard!");
+    }
+</script>
+</body>
+</html>
