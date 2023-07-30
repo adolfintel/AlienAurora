@@ -49,6 +49,7 @@ function FD23(target,config){
     this.tOffsetIntensity=assignOrDefault(config.tOffsetIntensity,3);
     this.tOffsetAdjustmentSpeed=assignOrDefault(config.tOffsetAdjustmentSpeed,1);
     this.resolutionScale=assignOrDefault(config.resolutionScale,1);
+    this.maxFps=assignOrDefault(config.maxFps,0);
     this.paused=false;
     
     //Internal variables, do not touch
@@ -67,7 +68,7 @@ function FD23(target,config){
     this._prevTs=0;
     this._t=Date.now();
     this._tOffset=0;
-
+    
     //Start the animation
     requestAnimationFrame(this._draw.bind(this));
     return this;
@@ -77,15 +78,16 @@ FD23.prototype={
     constructor:FD23,
     _draw:function(){
         if(this._destroyed) return;
-        if(!this.paused&&isVisible(this._target)){
+        requestAnimationFrame(this._draw.bind(this));
+        if(!this.paused&&isVisible(this._target)&&(this.maxFps==0||timeStamp()+1>=this._prevTs+1000/this.maxFps)){
+            this._ts=timeStamp();
             var canvas=this._target;
             if(this._prevW!=canvas.clientWidth||this._prevH!=canvas.clientHeight||this.resolutionScale!=this._prevResolutionScale){
                 canvas.width=(canvas.clientWidth<10?10:canvas.clientWidth)*this.resolutionScale*(window.devicePixelRatio||1);
                 canvas.height=(canvas.clientHeight<10?10:canvas.clientHeight)*this.resolutionScale*(window.devicePixelRatio||1);
                 this._prevResolutionScale=this.resolutionScale;
             }
-            this._ts=timeStamp();
-            if(this._ts-this._prevTs>1000){
+            if(this._ts-this._prevTs>2000){
                 this._prevTs=this._ts-30;
             }
             this._t+=(this._ts-this._prevTs)*this._speed;
@@ -141,7 +143,6 @@ FD23.prototype={
             this._prevH=canvas.clientHeight;
             this._prevTs=this._ts;
         }
-        requestAnimationFrame(this._draw.bind(this));
     },
     destroy:function(){
         this._destroyed=true;

@@ -76,17 +76,6 @@
         transform:translate(13.75rem,7rem) rotate(-90deg);
         
     }
-    #fps{
-        position:fixed;
-        top:0;
-        right:0;
-        padding:0.5rem;
-        font-family:monospace;
-        font-size:1.5rem;
-        color:#FFFF00;
-        text-shadow:0.05em 0.05em 0 black;
-        z-index:0;
-    }
     div.setting{
         display:block;
         border-bottom:1px solid #FFFFFF80;
@@ -124,7 +113,6 @@
 </head>
 <body>
 <canvas id="canvas"></canvas>
-<div id="fps"></div>
 <div id="settings">
     <h1 id="title">Configuration</h1>
     <div id="openclose" onclick="settings.classList.toggle('closed')"></div>
@@ -230,6 +218,11 @@
         <label for="resolutionScale" id="resolutionScaleValue"></label>
     </div>
     <div class="setting">
+        <label for="maxFps">FPS limit</label>
+        <input type="range" id="maxFps" min="0" max="60"/>
+        <label for="maxFps" id="maxFpsValue"></label>
+    </div>
+    <div class="setting">
         <label for="compensatePerceivedBrightness">Perceived brightness compensation</label>
         <input type="checkbox" id="compensatePerceivedBrightness"/>
         <label for="compensatePerceivedBrightness" id="compensatePerceivedBrightnessValue"></label>
@@ -244,7 +237,7 @@
     }
     canvas.addEventListener("DOMMouseScroll",tOffsetExample);
     canvas.addEventListener("mousewheel",tOffsetExample);
-    var t=0, prevT=1, smoothFps=0, prevhcp=0;
+    var t=0, prevT=1, prevhcp=0;
     function update(){
         x.targetHue=targetHueValue.innerText=targetHue.value;
         x.targetSaturation=targetSaturationValue.innerText=targetSaturation.value;
@@ -285,11 +278,9 @@
         x.tOffsetIntensity=tOffsetIntensityValue.innerText=tOffsetIntensity.value;
         x.tOffsetAdjustmentSpeed=tOffsetAdjustmentSpeedValue.innerText=tOffsetAdjustmentSpeed.value;
         x.resolutionScale=resolutionScaleValue.innerText=resolutionScale.value;
+        x.maxFps=maxFpsValue.innerText=maxFps.value;
+        if(maxFps.value==0) maxFpsValue.innerText="No cap"; //fr
         x.compensatePerceivedBrightness=compensatePerceivedBrightnessValue.innerText=compensatePerceivedBrightness.checked;
-        t=timeStamp();
-        smoothFps=0.8*smoothFps+0.2*(1000/(t-prevT));
-        fps.innerText=Math.round(smoothFps)+" FPS";
-        prevT=t;
         requestAnimationFrame(update);
     }
     function init(){
@@ -316,6 +307,7 @@
         tOffsetIntensityValue.innerText=tOffsetIntensity.value=x.tOffsetIntensity;
         tOffsetAdjustmentSpeedValue.innerText=tOffsetAdjustmentSpeed.value=x.tOffsetAdjustmentSpeed;
         resolutionScaleValue.innerText=resolutionScale.value=x.resolutionScale;
+        maxFpsValue.innerText=maxFps.value=x.maxFps;
         compensatePerceivedBrightnessValue.innerText=compensatePerceivedBrightness.checked=x.compensatePerceivedBrightness;
         update();
     }
@@ -341,6 +333,7 @@
             tOffsetIntensity:x.tOffsetIntensity,
             tOffsetAdjustmentSpeed:x.tOffsetAdjustmentSpeed,
             resolutionScale:x.resolutionScale,
+            maxFps:x.maxFps,
             compensatePerceivedBrightness:x.compensatePerceivedBrightness
         });
     },500);
